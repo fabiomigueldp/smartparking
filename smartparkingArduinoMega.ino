@@ -28,12 +28,12 @@ const int LCD_ADDRESS = 0x27; // Change this if your LCD has a different I2C add
 // Constants
 // -----------------------------
 
-const int MAX_SLOTS              = NUM_SLOTS;       // Total number of parking slots
-const int OCCUPIED_THRESHOLD_CM  = 100;              // Distance in cm below which a slot is considered occupied
+const int MAX_SLOTS             = NUM_SLOTS;       // Total number of parking slots
+const int OCCUPIED_THRESHOLD_CM = 100;             // Distance in cm below which a slot is considered occupied
 
 // Servo Angles
-const int SERVO_OPEN_ANGLE   = 90;  // Angle to open the gate
-const int SERVO_CLOSED_ANGLE = 0;   // Angle to close the gate
+const int SERVO_OPEN_ANGLE   = 90; // Angle to open the gate
+const int SERVO_CLOSED_ANGLE = 0;  // Angle to close the gate
 
 // Time Constants (in milliseconds)
 const unsigned long SENSOR_ACTIVATION_TIME    = 3000; // Time sensors must be active to trigger gate operation
@@ -239,8 +239,10 @@ void checkInfraredSensors() {
     } else {
       // If the sensor has been active for at least SENSOR_ACTIVATION_TIME
       if (currentTime - exitSensorActivatedTime >= SENSOR_ACTIVATION_TIME) {
-        if (exitGateState == IDLE) {
-          // If the exit gate is idle, open the gate
+
+        // **MODIFICATION**: Only open the exit gate if the parking lot is NOT empty
+        if (exitGateState == IDLE && availableSlots < MAX_SLOTS) {
+          // If the exit gate is idle and there is at least one car inside, open the gate
           exitGateState = OPENING;
           exitGateTimer = currentTime;
 
@@ -249,6 +251,10 @@ void checkInfraredSensors() {
           if (availableSlots > MAX_SLOTS) availableSlots = MAX_SLOTS; // Prevent exceeding max slots
 
           Serial.println("Car exited. Increasing available slots.");
+        }
+        else if (availableSlots == MAX_SLOTS) {
+          // If the parking is already empty, do not open the gate
+          Serial.println("Parking is empty, exit gate remains closed.");
         }
 
         // Reset the activation timer to prevent multiple triggers
